@@ -14,7 +14,7 @@ print('Balance: ' + str(balance))
 AMOUNT = input("Please specify the size of UTXOs: ")
 if int(AMOUNT) < 1:
     sys.exit('Cant stake coin amounts less than 1 coin, try again.')
-UTXOS = input("Please specify the amount of UTXOs to send to each segid: ")
+UTXOS = int(input("Please specify the amount of UTXOs to send to each segid: "))
 total = float(AMOUNT) * int(UTXOS) * 64
 print('Total amount: ' + str(total))
 if total > balance:
