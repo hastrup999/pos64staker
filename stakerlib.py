@@ -6,6 +6,8 @@ import random
 import base58
 import binascii
 import hashlib
+import time
+import codecs
 from slickrpc import Proxy
 
 
@@ -23,24 +25,29 @@ def def_credentials(chain):
         coin_config_file = str(ac_dir + '/komodo.conf')
     else:
         coin_config_file = str(ac_dir + '/' + chain + '/' + chain + '.conf')
-    with open(coin_config_file, 'r') as f:
-        for line in f:
-            l = line.rstrip()
-            if re.search('rpcuser', l):
-                rpcuser = l.replace('rpcuser=', '')
-            elif re.search('rpcpassword', l):
-                rpcpassword = l.replace('rpcpassword=', '')
-            elif re.search('rpcport', l):
-                rpcport = l.replace('rpcport=', '')
-    if len(rpcport) == 0:
-        if chain == 'KMD':
-            rpcport = 7771
-        else:
-            print("rpcport not in conf file, exiting")
-            print("check " + coin_config_file)
-            exit(1)
+    if os.path.isfile(coin_config_file):
+        with open(coin_config_file, 'r') as f:
+            for line in f:
+                l = line.rstrip()
+                if re.search('rpcuser', l):
+                    rpcuser = l.replace('rpcuser=', '')
+                elif re.search('rpcpassword', l):
+                    rpcpassword = l.replace('rpcpassword=', '')
+                elif re.search('rpcport', l):
+                    rpcport = l.replace('rpcport=', '')
+        if len(rpcport) == 0:
+            if chain == 'KMD':
+                rpcport = 7771
+            else:
+                print("rpcport not in conf file, exiting")
+                print("check " + coin_config_file)
+                exit(1)
 
-    return (Proxy("http://%s:%s@127.0.0.1:%d" % (rpcuser, rpcpassword, int(rpcport))))
+        return (Proxy("http://%s:%s@127.0.0.1:%d" % (rpcuser, rpcpassword, int(rpcport))))
+    else:
+        errmsg = coin_config_file+" does not exist! Please confirm "+str(chain)+" daemon is installed"
+        print(colorize(errmsg, 'red'))
+        exit(1)
 
 
 def user_input(display, input_type):
@@ -151,7 +158,7 @@ def sendmanyloop(rpc_connection, amount, utxos):
         lockunspent_result = rpc_connection.lockunspent(False, lockunspent_list)
     return(txid_list)
 
-def sendmany64_TUI(chain, rpc_connection):
+def sendmany64_TUI(rpc_connection):
     balance = float(rpc_connection.getbalance())
     print('Balance: ' + str(balance))
 
@@ -203,7 +210,7 @@ def RNDsendmanyloop(rpc_connection, amounts):
         lockunspent_result = rpc_connection.lockunspent(False, lockunspent_list)
     return(txid_list)
 
-def RNDsendmany_TUI(chain, rpc_connection):
+def RNDsendmany_TUI(rpc_connection):
 
     try:
         balance = float(rpc_connection.getbalance())
@@ -258,7 +265,7 @@ def RNDsendmany_TUI(chain, rpc_connection):
         print(i)
     print('Success!')
 
-def genaddresses(chain, rpc_connection): # FIXME don't print in start script
+def genaddresses(rpc_connection): # FIXME don't print in start script
     if os.path.isfile("list.json"):
         print('Already have list.json, move it if you would like to '
               'generate another set.You can use importlist.py script to import'
@@ -288,7 +295,7 @@ def genaddresses(chain, rpc_connection): # FIXME don't print in start script
 
 # FIXME make this rescan only on 64th import
 # import list.json to chain 
-def import_list(chain, rpc_connection):
+def import_list(rpc_connection):
     if not os.path.isfile("list.json"):
         print('No list.json file present. Use genaddresses.py script to generate one.')
         return(0)
@@ -308,14 +315,14 @@ def extract_segid(_segid,unspents):
             ret.append(unspent)
     return(ret)
 
-def withdraw_TUI(chain, rpc_connection):
+def withdraw_TUI(rpc_connection):
 
     def unlockunspent2():
         try:
             listlockunspent_result = rpc_connection.listlockunspent()
         except Exception as e:
             print(e)
-            withdraw_TUI(chain, rpc_connection)
+            withdraw_TUI(rpc_connection)
         unlock_list = []
         for i in listlockunspent_result:
             unlock_list.append(i)
@@ -323,7 +330,7 @@ def withdraw_TUI(chain, rpc_connection):
             lockunspent_result = rpc_connection.lockunspent(True, unlock_list)
         except Exception as e:
             print(e)
-            withdraw_TUI(chain, rpc_connection)
+            withdraw_TUI(rpc_connection)
         return(lockunspent_result)
 
     balance = float(rpc_connection.getbalance())
@@ -334,22 +341,22 @@ def withdraw_TUI(chain, rpc_connection):
         address_check = addr_convert('3c', address)
     except Exception as e:
         print('invalid address:', str(e) + '\n')
-        withdraw_TUI(chain, rpc_connection)
+        withdraw_TUI(rpc_connection)
 
     if address_check != address:
         print('Wrong address format, must use an R address')
-        withdraw_TUI(chain, rpc_connection)
+        withdraw_TUI(rpc_connection)
     
     user_input = input("Please specify the percentage of balance to lock: ")
     try:
         PERC = int(user_input)
     except:
         print('Error: must be whole number')
-        withdraw_TUI(chain, rpc_connection)
+        withdraw_TUI(rpc_connection)
     
     if PERC < 1:
         print('Error: Cant lock 0%.')
-        withdraw_TUI(chain, rpc_connection)
+        withdraw_TUI(rpc_connection)
 
     # get listunspent
     try:        
@@ -425,7 +432,7 @@ def withdraw_TUI(chain, rpc_connection):
     unlockunspent2()
     print('Success: ' + txid_result)
 
-def startchain(chain, rpc_connection):
+def startchain(rpc_connection):
     def blockcount():
         while True:
             getinfo_result = rpc_connection.getinfo()
@@ -436,7 +443,7 @@ def startchain(chain, rpc_connection):
     getinfo_result = rpc_connection.getinfo()
 
     if getinfo_result['blocks'] != 0:
-        print('must be used on a new chain, exiting')
+        print('must be used on a new exiting')
         return(0)
 
     peers = rpc_connection.getpeerinfo()
@@ -448,23 +455,23 @@ def startchain(chain, rpc_connection):
         print('This script is incompatible with ac_eras chains. Please use genaddresses then RNDsendmany after block 100 instead.')
         return(0)
 
-    def sendtoaddress(chain, rpc_connection):
+    def sendtoaddress(rpc_connection):
         address = input("Please specify address to withdraw coins to. It must not be owned by this node: ")
         try:
             address_check = addr_convert('3c', address)
         except Exception as e:
             print('invalid address:', str(e) + '\n')
-            sendtoaddress(chain, rpc_connection)
+            sendtoaddress(rpc_connection)
         if address_check != address:
             print('Wrong address format, must use an R address')
-            sendtoaddress(chain, rpc_connection)
+            sendtoaddress(rpc_connection)
         amount = input("Please specify the amount of coins to send: ")
         sendtoaddress_result = rpc_connection.sendtoaddress(address_check, amount)
         print(sendtoaddress_result)
 
     huh = input('Existing list.json found, would you like to import it?(y/n): ').lower()
     if huh.startswith('y'):
-        import_list(chain, rpc_connection)
+        import_list(rpc_connection)
     else:
         print('Must import a list.json')
         return(0)
@@ -475,12 +482,139 @@ def startchain(chain, rpc_connection):
     blockcount()
 
     balance = rpc_connection.getbalance()
-    if genaddresses(chain, rpc_connection) == 1:
+    if genaddresses(rpc_connection) == 1:
         ret = input('Would you like to stake the full premine?(y/n): ').lower()
         if not ret.startswith('y'):
             print('Balance: ' + str(rpc_connection.getbalance()))
-            sendtoaddress(chain, rpc_connection)
-        RNDsendmany_TUI(chain, rpc_connection)
+            sendtoaddress(rpc_connection)
+        RNDsendmany_TUI(rpc_connection)
         rpc_connection.setgenerate(True, 0)
         print('Your node has now begun staking. Ensure that at least one other node is mining.')
         return(0)
+
+#####  ORACLES #####
+oracletypes = [ 's', 'S', 'd', 'D', 'c', 't', 'i', 'l', 'h']
+def create_oracle(chain, name, description, oracletype):
+    rpc_connection = def_credentials(chain)
+    if oracletype not in oracletypes:
+        errmsg = str(oracletype)+' is not a valid Oracle type. See https://developers.komodoplatform.com/basic-docs/cryptoconditions/cc-oracles.html#oraclescreate for details'
+        print(colorize(errmsg, 'red'))
+        exit(1)
+    result = rpc_connection.oraclescreate(name, description, oracletype)
+    oracleHex=result['hex']
+    oracleResult=result['result']
+    while oracleResult != 'success':
+        result = rpc_connection.oraclescreate(name, description, oracletype)
+        oracleHex=result['hex']
+        oracleResult=result['result']
+    result = rpc_connection.sendrawtransaction(oracleHex)
+    while len(result) != 64:
+        time.sleep(15)
+        result = rpc_connection.sendrawtransaction(oracleHex)
+    oracletxid = result
+    return oracletxid
+
+
+def register_oracle(chain, oracletxid, datafee):
+    rpc_connection = def_credentials(chain)
+    datafee=str(datafee)
+    pubkey = rpc_connection.getinfo()['pubkey']
+    rego = rpc_connection.oraclesregister(oracletxid, datafee)
+    if rego['result'] == 'error':
+        print(colorize(rego['error'], 'red'))
+        exit(1)
+    oracleHex=rego['hex']
+    oracleResult=rego['result']
+    while oracleResult != 'success':
+        rego = rpc_connection.oraclesregister(oracletxid, datafee)
+        oracleHex=rego['hex']
+        oracleResult=rego['result']
+    regotx = rpc_connection.sendrawtransaction(oracleHex)
+    print(colorize('sending registration tx', 'blue'))
+    while len(regotx) != 64:
+        time.sleep(15)
+        regotx = rpc_connection.sendrawtransaction(oracleHex)  
+        print(colorize('sending registration tx', 'blue'))    
+    memPool = str(rpc_connection.getrawmempool())
+    while memPool.find(regotx) < 0:
+        time.sleep(5)
+        memPool = str(rpc_connection.getrawmempool())
+    orcl_info = rpc_connection.oraclesinfo(oracletxid)
+    reg_json=orcl_info['registered']
+    while len(reg_json) < 1:
+        print(colorize('waiting for registration', 'blue'))
+        time.sleep(15)
+        orcl_info = rpc_connection.oraclesinfo(oracletxid)
+        reg_json=orcl_info['registered']
+    for reg_pub in reg_json:
+        if reg_pub['publisher'] == pubkey:
+            publisher=str(reg_pub['publisher'])
+            funds=str(reg_pub['funds'])
+            print(colorize("publisher ["+publisher+"] registered on oracle ["+oracletxid+"]!", 'green'))
+    return publisher
+
+def fund_oracle(chain, oracletxid, publisher, funds):
+    rpc_connection = def_credentials(chain)
+    pubkey = rpc_connection.getinfo()['pubkey']
+    orcl_info = rpc_connection.oraclesinfo(oracletxid)
+    reg_json=orcl_info['registered']
+    for reg_pub in reg_json:
+        if reg_pub['publisher'] == pubkey:
+            exisingFunds=float(reg_pub['funds'])
+    amount = funds/10;
+    sub_transactions = []
+    for x in range(1,11):
+        subtx = ''
+        while len(subtx) != 64:
+            print(colorize("Sending funds "+str(x)+"/10", 'blue'))
+            subHex = rpc_connection.oraclessubscribe(oracletxid, publisher, str(amount))['hex']
+            subtx = rpc_connection.sendrawtransaction(subHex)
+            time.sleep(5)
+        sub_transactions.append(subtx)
+        print(colorize("Funds "+str(x)+"/10 sent", 'blue'))
+    while exisingFunds < 1:
+        orcl_info = rpc_connection.oraclesinfo(oracletxid)
+        reg_json=orcl_info['registered']
+        for reg_pub in reg_json:
+            if reg_pub['publisher'] == pubkey:
+                exisingFunds=float(reg_pub['funds'])
+        print(colorize("waiting for funds to appear on oracle",'blue'))
+        time.sleep(15)
+    print(colorize("Finished sending "+str(funds)+" to oracle.", 'green'))
+
+def write2oracle(chain, oracletxid, message):
+    rpc_connection = def_credentials(chain)
+    rawhex = codecs.encode(message).hex()
+    bytelen = int(len(rawhex) / int(2))
+    hexlen = format(bytelen, 'x')
+    if bytelen < 16:
+        bigend = "000" + str(hexlen)
+    elif bytelen < 256:
+        bigend = "00" + str(hexlen)
+    elif bytelen < 4096:
+        bigend = "0" + str(hexlen)
+    elif bytelen < 65536:
+        bigend = str(hexlen)
+    else:
+        print("message too large, must be less than 65536 characters")
+    lilend = bigend[2] + bigend[3] + bigend[0] + bigend[1]
+    fullhex = lilend + rawhex
+    oraclesdata_result = rpc_connection.oraclesdata(oracletxid, fullhex)
+    result = oraclesdata_result['result']
+    if result == 'error':
+        print('ERROR:' + oraclesdata_result['error'] + ', try using oraclesregister if you have not already, and make sure the oracle is funded')
+    else:
+        rawtx = oraclesdata_result['hex']
+        sendrawtransaction_result = rpc_connection.sendrawtransaction(rawtx)
+    return result
+
+def read_oracle(chain, oracletxid, numrec):
+    rpc_connection = def_credentials(chain)
+    pubkey = rpc_connection.getinfo()['pubkey']
+    orcl_info = rpc_connection.oraclesinfo(oracletxid)
+    reg_json=orcl_info['registered']
+    for reg_pub in reg_json:
+        if reg_pub['publisher'] == pubkey:
+            batonutxo=reg_pub['batontxid']
+    samples = rpc_connection.oraclessamples(oracletxid, batonutxo, str(numrec))
+    return samples['samples']
