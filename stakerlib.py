@@ -602,7 +602,7 @@ def write2oracle(chain, oracletxid, message):
     oraclesdata_result = rpc_connection.oraclesdata(oracletxid, fullhex)
     result = oraclesdata_result['result']
     if result == 'error':
-        print('ERROR:' + oraclesdata_result['error'] + ', try using oraclesregister if you have not already, and make sure the oracle is funded')
+        print('ERROR:' + oraclesdata_result['error'] + ', try using oraclesregister if you have not already, and check the oracle is funded')
     else:
         rawtx = oraclesdata_result['hex']
         sendrawtransaction_result = rpc_connection.sendrawtransaction(rawtx)
