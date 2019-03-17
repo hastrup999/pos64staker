@@ -12,6 +12,7 @@ sudo apt-get install python3-dev
 sudo apt-get install python3 libgnutls28-dev libssl-dev
 sudo apt-get install python3-pip
 pip3 install setuptools
+pip3 install wheel
 pip3 install base58 slick-bitcoinrpc
 ```
 
