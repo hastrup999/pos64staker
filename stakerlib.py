@@ -493,7 +493,7 @@ def startchain(rpc_connection):
         return(0)
 
 #####  ORACLES #####
-oracletypes = [ 's', 'S', 'd', 'D', 'c', 't', 'i', 'l', 'h']
+oracletypes = [ 's', 'S', 'd', 'D', 'c', 't', 'i', 'l', 'h', 'Ihh']
 def create_oracle(chain, name, description, oracletype):
     rpc_connection = def_credentials(chain)
     if oracletype not in oracletypes:
@@ -507,11 +507,11 @@ def create_oracle(chain, name, description, oracletype):
         result = rpc_connection.oraclescreate(name, description, oracletype)
         oracleHex=result['hex']
         oracleResult=result['result']
-    result = rpc_connection.sendrawtransaction(oracleHex)
-    while len(result) != 64:
+    oracletxid = rpc_connection.sendrawtransaction(oracleHex)
+    while len(oracletxid) != 64:
         time.sleep(15)
-        result = rpc_connection.sendrawtransaction(oracleHex)
-    oracletxid = result
+        oracletxid = rpc_connection.sendrawtransaction(oracleHex)
+    print(colorize("Oracle ["+oracletxid+"] created!", 'green'))
     return oracletxid
 
 
@@ -530,11 +530,11 @@ def register_oracle(chain, oracletxid, datafee):
         oracleHex=rego['hex']
         oracleResult=rego['result']
     regotx = rpc_connection.sendrawtransaction(oracleHex)
-    print(colorize('sending registration tx', 'blue'))
+    print(colorize('sending oracle registration tx', 'blue'))
     while len(regotx) != 64:
         time.sleep(15)
         regotx = rpc_connection.sendrawtransaction(oracleHex)  
-        print(colorize('sending registration tx', 'blue'))    
+        print(colorize('sending oracle registration tx', 'blue'))    
     memPool = str(rpc_connection.getrawmempool())
     while memPool.find(regotx) < 0:
         time.sleep(5)
@@ -542,7 +542,7 @@ def register_oracle(chain, oracletxid, datafee):
     orcl_info = rpc_connection.oraclesinfo(oracletxid)
     reg_json=orcl_info['registered']
     while len(reg_json) < 1:
-        print(colorize('waiting for registration', 'blue'))
+        print(colorize('waiting for oracle registration', 'blue'))
         time.sleep(15)
         orcl_info = rpc_connection.oraclesinfo(oracletxid)
         reg_json=orcl_info['registered']
@@ -561,17 +561,17 @@ def fund_oracle(chain, oracletxid, publisher, funds):
     for reg_pub in reg_json:
         if reg_pub['publisher'] == pubkey:
             exisingFunds=float(reg_pub['funds'])
-    amount = funds/10;
+    amount = float(funds)/10;
     sub_transactions = []
     for x in range(1,11):
         subtx = ''
         while len(subtx) != 64:
-            print(colorize("Sending funds "+str(x)+"/10", 'blue'))
+            print(colorize("Sending funds "+str(x)+"/10 to oracle", 'blue'))
             subHex = rpc_connection.oraclessubscribe(oracletxid, publisher, str(amount))['hex']
             subtx = rpc_connection.sendrawtransaction(subHex)
             time.sleep(5)
         sub_transactions.append(subtx)
-        print(colorize("Funds "+str(x)+"/10 sent", 'blue'))
+        print(colorize("Funds "+str(x)+"/10 sent to oracle", 'blue'))
     while exisingFunds < 1:
         orcl_info = rpc_connection.oraclesinfo(oracletxid)
         reg_json=orcl_info['registered']
@@ -606,6 +606,7 @@ def write2oracle(chain, oracletxid, message):
     else:
         rawtx = oraclesdata_result['hex']
         sendrawtransaction_result = rpc_connection.sendrawtransaction(rawtx)
+    print(colorize("Message ["+message+"] written to oracle.", 'green'))
     return result
 
 def read_oracle(chain, oracletxid, numrec):
@@ -616,5 +617,82 @@ def read_oracle(chain, oracletxid, numrec):
     for reg_pub in reg_json:
         if reg_pub['publisher'] == pubkey:
             batonutxo=reg_pub['batontxid']
-    samples = rpc_connection.oraclessamples(oracletxid, batonutxo, str(numrec))
-    return samples['samples']
+    if 'batonutxo' in locals():
+        samples = rpc_connection.oraclessamples(oracletxid, batonutxo, str(numrec))
+        print(colorize("ERROR: Oracle records retrieved.", 'red'))
+        return samples['samples']
+    else:
+        print(colorize("ERROR: Oracle batonuto does not exist.", 'red'))
+
+
+
+
+
+##############  TOKENS CC  #########################################################################
+
+def create_tokens(chain, tokenname, tokendesc, tokensupply):
+    rpc_connection = def_credentials(chain)
+    result = rpc_connection.tokencreate(str(tokenname), str(tokensupply), str(tokendesc))
+    if 'hex' in result.keys():
+        tokentxid = rpc_connection.sendrawtransaction(result['hex'])
+        print(colorize("Tokentxid ["+str(tokentxid)+"] created", 'green'))
+        return tokentxid
+    else:
+        print(colorize("Tokentxid creation failed: ["+str(result)+"]", 'red'))
+        exit(1)
+
+def tokenbalance(chain, tokentxid, pubkey=""):
+    rpc_connection = def_credentials(chain)
+    if len(pubkey) == 66:
+        result = rpc_connection.tokenbalance(str(tokentxid), str(pbkey))
+    else:
+        result = rpc_connection.tokenbalance(str(tokentxid))
+    if 'result' in result.keys():
+        if result['result'] == 'success':
+            tokenaddress = result['CCaddress']
+            balance = result['balance']
+            print(colorize("Tokentxid ["+str(tokentxid)+"] address ["+str(tokenaddress)+"] has ["+str(balance)+"] balance", 'green'))
+        else:
+            print(colorize("Getting token balance failed: ["+str(result)+"]", 'red'))
+            exit(1)
+    else:
+        print(colorize("Getting token balance failed: ["+str(result)+"]", 'red'))
+        exit(1)
+
+
+
+##############  GATEWAYS CC  #########################################################################
+
+def bind_gateway(chain, tokentxid, oracletxid, tokenname, tokensupply, N, M, gatewayspubkey, pubtype, p2shtype, wiftype):
+    rpc_connection = def_credentials(chain)
+    if M != str(1) or N != str(1):
+        print(colorize("Multisig gateway not yet supported in script, using 1 of 1.", 'red'))
+        M = 1
+        N = 1
+    result = rpc_connection.gatewaysbind(tokentxid, oracletxid, tokenname, str(tokensupply), str(N), str(M), gatewayspubkey, str(pubtype), str(p2shtype), str(wiftype))
+    if 'hex' in result.keys():
+        bindtxid = rpc_connection.sendrawtransaction(result['hex'])
+        print(colorize("Bindtxid ["+str(bindtxid)+"] created", 'green'))
+        return bindtxid
+    else:
+        print(colorize("Bindtxid creation failed: ["+str(result)+"]", 'red'))
+        exit(1)
+
+def create_gateway():    
+    chain = user_input('Enter asset-chain to create tokens on: ', str)
+    tokenname = user_input('Enter token name: ', str)
+    tokendesc = user_input('Enter token description: ', str)
+    tokensupply = user_input('Enter token supply: ', str)
+    tokentxid = create_tokens(chain, tokenname, tokendesc, tokensupply)
+    oracletxid = create_oracle(chain, tokenname, 'blockheaders', 'Ihh')
+    datafee = user_input('Enter oracle data fee (in satoshis): ', str)
+    while int(datafee) < 10000:
+        print(colorize("Datafee too low, set to 10k or more", 'blue'))
+        datafee = user_input('Enter oracle data fee (in satoshis): ', str)
+    oraclepublisher = register_oracle(chain, oracletxid, datafee)
+    funds = user_input('Enter amount of funds to send to oracle: ', str)
+    fund_oracle(chain, oracletxid, oraclepublisher, funds)
+    N = user_input('Enter total number of gateways signatures: ', str)
+    M = user_input('Enter number gateways signatures required to withdraw: ', str)
+    tokensatsupply = 100000000*int(tokensupply)
+    bindtx = bind_gateway(chain, tokentxid, oracletxid, tokenname, tokensatsupply, N, M, oraclepublisher, 60, 85, 188)
