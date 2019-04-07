@@ -47,7 +47,7 @@ while True:
     print('Total number of UTXOs: ' + str(TUTXOS))
     average = float(balance) / int(TUTXOS)
     print('Average utxo size: ' + str(average))
-    variance = float(input('Enter percentage of variance: '))
+    variance = int(input('Enter percentage of variance: '))
     minsize = round(float(average) * (1-(variance/100)),2)
     if minsize < 1:
         print('Cant stake coin amounts less than 1 coin, try again.')
@@ -69,11 +69,11 @@ while finished == False:
         amnt = round(random.uniform(minsize,maxsize),2)
         totalamnt += amnt * 64
         AMOUNTS.append(amnt)
-        if totalamnt > balance-0.1:
+        if totalamnt > balance-(balance*0.01):
             totalamnt = 0
             AMOUNTS.clear()
             break
-    if totalamnt > balance-2:
+    if totalamnt > balance-(balance*0.05):
         finished = True
 
 sendmanyloop_result = RNDsendmanyloop(rpc_connection, AMOUNTS)
