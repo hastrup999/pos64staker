@@ -134,7 +134,7 @@ def sendmany64(rpc_connection, amount):
             addresses_dict[address] = amount
 
     # make rpc call, issue transaction
-    sendmany_result = rpc_connection.sendmany("", addresses_dict)
+    sendmany_result = rpc_connection.sendmany("", addresses_dict, 0)
     return(sendmany_result)
 
 # function to do sendmany64 UTXOS times, locking all UTXOs except change

@@ -73,7 +73,7 @@ while finished == False:
             totalamnt = 0
             AMOUNTS.clear()
             break
-    if totalamnt > balance-(balance*0.05):
+    if totalamnt > balance-(balance*0.02):
         finished = True
 
 sendmanyloop_result = RNDsendmanyloop(rpc_connection, AMOUNTS)
