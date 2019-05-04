@@ -33,10 +33,10 @@ def sendmanyloop(rpc_connection):
     with open('list.json') as key_list:
         json_data = json.load(key_list)
         finished = False
+        totalamnt = 0 
         while finished == False:
             totalamnt = 0
             addresses_dict = {}
-            print(str(len(json_data)))
             for i in range(len(json_data)):
                 address = json_data[i][3]
                 addresses_dict[address] = round(random.uniform(minsize,maxsize),0)
@@ -46,9 +46,9 @@ def sendmanyloop(rpc_connection):
                     break
             if totalamnt > balance-(balance*0.02):
                 finished = True
-            print(str(totalamnt))
             # make rpc call, issue transaction
-            sendmany64_txid = rpc_connection.sendmany("", addresses_dict, 0)
+        print(str(totalamnt))
+        sendmany64_txid = rpc_connection.sendmany("", addresses_dict, 0)
     return(sendmany64_txid)
 
 sendmanyloop_result = sendmanyloop(rpc_connection)
