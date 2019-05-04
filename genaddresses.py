@@ -11,30 +11,20 @@ if os.path.isfile("list.json"):
     sys.exit(0)
 
 CHAIN = input('Please specify chain: ')
-
+AMOUNT = input('Enter amount of address to make:')
 # create rpc_connection
 try:
     rpc_connection = stakerlib.def_credentials(CHAIN)
 except Exception as e:
     sys.exit(e)
     
-# fill a list of sigids with matching segid address data
-segids = {}
-while len(segids.keys()) < 64:
+segids = []
+while len(segids) < int(AMOUNT):
     genvaldump_result = stakerlib.genvaldump(rpc_connection)
-    segid = genvaldump_result[0]
-    if segid in segids:
-        pass
-    else:
-        segids[segid] = genvaldump_result
-
-# convert dictionary to array
-segids_array = []
-for position in range(64):
-    segids_array.append(segids[position])
+    segids.append(genvaldump_result)
 
 # save output to list.py
 print('Success! list.json created. '
       'THIS FILE CONTAINS PRIVATE KEYS. KEEP IT SAFE.')
 f = open("list.json", "w+")
-f.write(json.dumps(segids_array))
+f.write(json.dumps(segids))

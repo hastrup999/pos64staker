@@ -1,11 +1,3 @@
-# pos64splitter
-
-An automated staker for PoS assetchains. Please see https://docs.komodoplatform.com/komodo/assetchain-params.html#ac-staked for details on pos64 POS implementation. 
-
-This is a work in progress. We aim to make this easy to use and as "set and forget" as possible. Please feel free to contribute code and ideas. 
-
-Currently, this will maintain a static number of UTXOs. This is important because a staking wallet can become very bloated over time. The block reward of any staked blocks will be combined with the UTXO used to stake the block.
-
 ## Dependencies
 ```shell
 sudo apt-get install python3-dev
@@ -16,95 +8,26 @@ pip3 install wheel
 pip3 install base58 slick-bitcoinrpc
 ```
 
-[komodod](https://github.com/StakedChain/komodo) installed with your assetchain running.
+## Payments CC Game 
 
-## How to Use
+- Object of the game is to receive as many airdropped coins as possible.
+- Every 1440 blocks a snapshot is triggered on the chain. The top 3999 address by balance from highest to lowest is added to a list.
+- The snapshot will rewind back to the last notarized height. 
+- The block hash of this block is used to generate 2 numbers, one below 50 and one above 50. 
+- These numbers represent a percentage. For example, 20-80 means that the top 20% are paid nothing and the bottom 20% are paid nothing.
+- The entire airdrop is shared equally between all address inside the range. 
+- A basic strategy is to simply create X address and spread your balance out over these, trying to keep most of them in the middle of the rich list, as this is the most likely to be airdropped multiple times. 
+- Anyone can release the coins 1460 blocks after they are created. This means that at block 2900, `paymentsrelease` RPC can be run by any person. You can unlock anything over 5 Million coins. Any remaining coins, will be locked for 1460 blocks. So to release them, the next snapshot will have already happened changing the range of address. 
+- The idea is to release the funds as quickly as possible to your advantage before somebody else. 
+- After a few days, if only half has been released each time, the amount possible to release will be increased, there is no maximum release. The only constrints are is that it has been 1460 blocks since the funding arrived (either from coinbase payment each 1440 blocks, or change from a previous release.) and that the minimum released is 5 Million coins.
+- Example: I release 5M coins at block 2901, 5M coins (-txfee) return to the payments fund, and not able to be released again until block 4361. A thing to consider here is because of txfees, the 5M would actually be locked until some other amount is sent, either by someone funding the plan with `paymentsfund` 1460 blocks earlier, or by the 10M coinbase payment, or change from another release. 
 
-The following examples will use CFEK. Replace CFEK with the chain you are using.
+## Some scripts 
 
-`git clone https://github.com/StakedChain/pos64staker`
+You can generate addresses with `genaddresses.py` 
+- It simply asks for input, for chain name: CFEKPAY and the amount of address to make. 
 
-`cd pos64staker`
-
-`./genaddresses`
-```shell
-Please specify chain:CFEK
-```
-
-This will create a `list.json` file in the current directory. **THIS FILE CONTAINS PRIVATE KEYS. KEEP IT SAFE.**
-Copy this file to the directory `komodod` is located. 
-
-`cp list.json ~/komodo/src/list.json`
-
-`./sendmany64.py`
-```shell
-Please specify chain:CFEK
-Balance: 1000000.77
-Please specify the size of UTXOs:10
-Please specify the amount of UTXOs to send to each segid:10
-```
-Please take note of what this is actually asking for. The above example will send 6400 coins total. It will send 100 coins in 10 UTXOs to each of the 64 segids. Will throw error if your entered amounts are more than your balance. Will tell you how much avalible you have for each segid.
-
-You now need to start the daemon with -blocknotify and -pubkey set.
-
-Fetch a pubkey from your `list.json` and place it in your start command. For example:
-
-`./komodod -ac_name=CFEK -ac_supply=1000000 -ac_reward=10000000000 -ac_cc=2 -ac_staked=50 -addnode=195.201.20.230 -addnode=195.201.137.5  -pubkey=0367e6b61a60f9fe6748c27f40d0afe1681ec2cc125be51d47dad35955fab3ba3b '-blocknotify=/home/<USER>/pos64staker/staker.py %s CFEK'`
-
-NOTE the CFEK in -blocknotify make sure you change this to the correct chain name you are using also note the single quotes.
-
-After the daemon has started and is synced simply do `komodo-cli -ac_name=CFEK setgenerate true 0` to begin staking. 
-
-
-### How the staker.py works
-
-on block arrival:
-
-getinfo for -pubkey 
-
-setpubkey for R address 
-
-check coinbase -> R address 
-
-if yes check segid of block.
-
-if -1 send PoW mined coinbase to :
-
-        listunspent call ... 
-
-        sort by amount -> smallest at top and then by confirms -> lowest to top. (we want large and old utxos to maximise staking rewards.)
-
-        select the top txid/vout
-
-        add this txid to txid_list
-
-        get last segid stakes 1440 blocks (last24H)
-
-        select all segids under average stakes per segid in 24H
-
-        randomly choose one to get segid we will send to.        
-
-if segid >= 0 :
-
-    fetch last transaction in block
-
-    check if this tx belongs to the node
-
-    if yes, use alrights code to combine this coinbase utxo with the utxo that staked it.
-    
-    
-### Withdraw 
-
-Withdraw script is for withdrawing funds from a staking node, without messing up utxo distribution. Works like this:
-
-    Asks for percentage you want locked (kept). 
-    
-    It then counts how many utxo per segid. 
-    
-    Locks the largest and oldest utxos in each segid up to the % you asked.
-    
-    Gives balance of utxos remaning that are not locked.  These should be the smallest and newest utxo's in each segid. The least likely to stake.
-    
-    Then lets you send some coins to an address. 
-    
-    Unlocks utxos again.
+You can then send these with `splittoaddress.py`
+- Hardcoded to CFEKPAY, gets balance of wallet automatically. 
+- Asks for vairance and then generates a `sendmany` that sends to your list of address. 
+- Variance is a min and max size by percentage. Just answer `y` to `are you happy with these?` to send it. or `n`to try a diffrent percentageof variance.
