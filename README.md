@@ -8,6 +8,13 @@ pip3 install wheel
 pip3 install base58 slick-bitcoinrpc
 ```
 
+## Install
+
+```shell
+git clone https://github.com/KMDLabs/pos64staker
+git checkout paymentsGame
+```
+
 ## Payments CC Game 
 
 - Object of the game is to receive as many airdropped coins as possible.
