@@ -33,6 +33,9 @@ git checkout paymentsGame
 
 You can generate addresses with `genaddresses.py` 
 - It simply asks for input, for chain name: CFEKPAY and the amount of address to make. 
+- This generates a list.json file containing addresses and private keys. KEEP IT SAFE!
+
+Now you can import these addresses using `importlist.py`
 
 You can then send these with `splittoaddress.py`
 - Hardcoded to CFEKPAY, gets balance of wallet automatically. 
