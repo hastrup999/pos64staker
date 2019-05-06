@@ -62,4 +62,4 @@ print('This is the middle address right now: ' + str(snapshot['addresses'][media
 balance = float(rpc_connection.getbalance())
 average = float(balance) / float(snapshot['addresses'][median_address]['amount'])
 
-print('You should use ' + str(average) + ' addresses to cluster them in the middle, with your current balance of: ' str(balance))
+print('You should use ' + str(average) + ' addresses to cluster them in the middle, with your current balance of: '+ str(balance))
