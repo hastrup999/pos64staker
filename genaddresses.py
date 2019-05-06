@@ -4,6 +4,7 @@ import json
 import os.path
 import stakerlib
 
+json_data = []
 if os.path.isfile("list.json"):
     with open('list.json') as key_list:
         json_data = json.load(key_list)
