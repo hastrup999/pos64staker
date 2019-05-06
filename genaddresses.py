@@ -5,26 +5,29 @@ import os.path
 import stakerlib
 
 if os.path.isfile("list.json"):
-    print('Already have list.json, move it if you would like to '
-          'generate another set.You can use importlist.py script to import'
-          ' the already existing list.py to a given chain.')
-    sys.exit(0)
+    with open('list.json') as key_list:
+        json_data = json.load(key_list)
+        TUTXOS = len(json_data)
 
 CHAIN = input('Please specify chain: ')
-AMOUNT = input('Enter amount of address to make:')
+AMOUNT = int(input('Enter amount of address to make: '))
+
+if AMOUNT < len(json_data):
+    print('Already have more address than this, please backup list.json and create new addresses.)
+    sys.exit()
+
 # create rpc_connection
 try:
     rpc_connection = stakerlib.def_credentials(CHAIN)
 except Exception as e:
     sys.exit(e)
-    
-segids = []
-while len(segids) < int(AMOUNT):
-    genvaldump_result = stakerlib.genvaldump(rpc_connection)
-    segids.append(genvaldump_result)
 
-# save output to list.py
+while len(json_data) < AMOUNT:
+    genvaldump_result = stakerlib.genvaldump(rpc_connection)
+    json_data.append(genvaldump_result)
+
+# save output to list.json
 print('Success! list.json created. '
       'THIS FILE CONTAINS PRIVATE KEYS. KEEP IT SAFE.')
 f = open("list.json", "w+")
-f.write(json.dumps(segids))
+f.write(json.dumps(json_data))
