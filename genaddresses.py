@@ -13,7 +13,7 @@ CHAIN = input('Please specify chain: ')
 AMOUNT = int(input('Enter amount of address to make: '))
 
 if AMOUNT < len(json_data):
-    print('Already have more address than this, please backup list.json and create new addresses.)
+    print('Already have more address than this, please backup list.json and create new addresses.')
     sys.exit()
 
 # create rpc_connection
