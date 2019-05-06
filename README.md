@@ -34,10 +34,18 @@ git checkout paymentsGame
 You can generate addresses with `genaddresses.py` 
 - It simply asks for input, for chain name: CFEKPAY and the amount of address to make. 
 - This generates a list.json file containing addresses and private keys. KEEP IT SAFE!
+- Will take your existing list.json and append it with more address, if you entered a larger number than you currently have. 
+- If you want less, fix this, or just backup list.json and generate a new one.
 
-Now you can import these addresses using `importlist.py`
+Now you can import these addresses using `importlist.py` - generate address does import them, only need to do this if using a diffrent node/wallet to generate than use. 
 
 You can then send these with `splittoaddress.py`
 - Hardcoded to CFEKPAY, gets balance of wallet automatically. 
 - Asks for vairance and then generates a `sendmany` that sends to your list of address. 
 - Variance is a min and max size by percentage. Just answer `y` to `are you happy with these?` to send it. or `n`to try a diffrent percentageof variance.
+
+## Basic stats stuff:
+- you can get some basic stats with `./getcurrentranks.py`
+- It will tell you how many address you have in the current range. Current daily snapshot, moving your funds will not change this value, until the next daily snapshot happens.
+- It tells you your maximum and minimum balances currently on chain, and what range they fall into. 
+- Also suggests the median address as an average to target. This is very basic, but I hope it makes the game make more sense to you guys. 
