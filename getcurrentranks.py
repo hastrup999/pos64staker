@@ -5,6 +5,11 @@ import stakerlib
 import random
 
 CHAIN = 'CFEKPAY'
+addresses = []
+addrobj = {}
+addresses.append('RNcyNSiy7bLMdUqG1vmaaDbVtH6uxP9j97')
+addrobj['addresses'] = addresses;
+
 try:
     rpc_connection = stakerlib.def_credentials(CHAIN)
 except Exception as e:
@@ -13,9 +18,14 @@ with open('list.json') as key_list:
     json_data = json.load(key_list)
     TUTXOS = len(json_data)
 
+getinfo = rpc_connection.getinfo()
 snapshot = rpc_connection.getsnapshot(str(3999))
 dailysnapshot = rpc_connection.getsnapshot(str(-1))
 paymentsinfo = rpc_connection.paymentsinfo('["5bbc56201b1a61bdba4f708dc64928ad7a854f2e5137c93eba309f95756d02d4"]')
+snapshot_txids = rpc_connection.getaddresstxids(addrobj,1)
+last_snapshot = rpc_connection.getrawtransaction(snapshot_txids[len(snapshot_txids)-1], 1)['vout']
+last_snapshot_amount = last_snapshot[len(last_snapshot)-2]['value']
+
 #print(paymentsinfo)
 bottom = paymentsinfo['bottom']
 top = paymentsinfo['top']
@@ -37,6 +47,12 @@ for i in range(len(dailysnapshot['addresses'])):
 print('You have: ' + str(n) + ' addresses within the range ' + str(bottom) + ' - ' + str(top) + ' in the current daily snapshot')
 print('Balance of bottom address: ' + str(bottom_balance))
 print('Balance of top address: ' + str(top_balance))
+if float(paymentsinfo['elegiblefunds']) > float(paymentsinfo['minrelease']):
+    print('Elegible funds to be released right now: ' + str(paymentsinfo['elegiblefunds']))
+    print('You will receive ' + str( (paymentsinfo['elegiblefunds'] / (top-bottom)) * n ) + ' if you trigger paymentsrelease now.')
+else: 
+    print('You received ' + str(float(last_snapshot_amount*n)) + ' in the last snapshot.')
+    print(str(paymentsinfo['min_release_height']-getinfo['blocks']) + ' blocks before next minimum release possible, approx ' + str((paymentsinfo['min_release_height']-getinfo['blocks'])/60) + 'H')
 print('')
 
 top = 0
