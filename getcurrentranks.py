@@ -41,7 +41,7 @@ for i in range(len(dailysnapshot['addresses'])):
     for address in json_data:
         if address[3] == dailysnapshot['addresses'][i]['addr']:
             #print('found rank ' + str(i) + ' : ' + address[3])
-            if i > bottom and i < top:
+            if i >= bottom and i <= top:
                 n = n + 1
                 #print(str(i) + ' within range: ' + str(bottom) + ' - ' + str(top))
 print('You have: ' + str(n) + ' addresses within the range ' + str(bottom) + ' - ' + str(top) + ' in the current daily snapshot')
