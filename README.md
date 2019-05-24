@@ -24,7 +24,7 @@ The following examples will use CFEK. Replace CFEK with the chain you are using.
 
 `git clone https://github.com/StakedChain/pos64staker`
 
-`cd pos64staker`
+`cd pos64staker.py`
 
 `./genaddresses`
 ```shell
