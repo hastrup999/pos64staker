@@ -116,17 +116,17 @@ def chain_loop(chain):
             os.system('clear')
             select_loop('')
         elif int(selection) == 1:
-            stakerlib.sendmany64_TUI(chain, rpc_connection)
+            stakerlib.sendmany64_TUI(rpc_connection)
         elif int(selection) == 2:
-            stakerlib.RNDsendmany_TUI(chain, rpc_connection)
+            stakerlib.RNDsendmany_TUI(rpc_connection)
         elif int(selection) == 3:
-            stakerlib.genaddresses(chain, rpc_connection)
+            stakerlib.genaddresses(rpc_connection)
         elif int(selection) == 4:
-            stakerlib.import_list(chain, rpc_connection)
+            stakerlib.import_list(rpc_connection)
         elif int(selection) == 5:
-            stakerlib.withdraw_TUI(chain, rpc_connection)
+            stakerlib.withdraw_TUI(rpc_connection)
         elif int(selection) == 6:
-            stakerlib.startchain(chain, rpc_connection)
+            stakerlib.startchain(rpc_connection)
         else:
             print('BUG!')
 
