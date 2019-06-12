@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import stakerlib 
+import json
    
 # function to unlock ALL lockunspent UTXOs
 def unlockunspent():
@@ -108,7 +109,7 @@ for _segid, stakes in getlastsegidstakes_result['SegIds'].items():
 
 addresses_dict = {}
 for segid in usable_segids:
-    address = segid_addresses[segid][3]
+    address = segid_addresses[int(segid)][3]
     # there should be a weight calculated and applied for segids with less stakes in the last 24H to get more coins? 
     addresses_dict[address] = amount / len(usable_segids)
 
