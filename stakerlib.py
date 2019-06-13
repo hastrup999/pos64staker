@@ -696,3 +696,14 @@ def create_gateway():
     M = user_input('Enter number gateways signatures required to withdraw: ', str)
     tokensatsupply = 100000000*int(tokensupply)
     bindtx = bind_gateway(chain, tokentxid, oracletxid, tokenname, tokensatsupply, N, M, oraclepublisher, 60, 85, 188)
+
+def wait_confirm(rpc, txid, timeout=600):
+    start_time = time.time()
+    while txid in rpc.getrawmempool():
+        print("Waiting for confirmation...")
+        time.sleep(15)
+        looptime = time.time() - start_time
+        if looptime > timeout:
+            print("Transaction timed out")
+            exit(1)
+    print("Transaction "+txid+" confirmed!")
