@@ -8,8 +8,13 @@ try:
     rpc_connection = stakerlib.def_credentials(CHAIN)
 except Exception as e:
     sys.exit(e)
+default_account = rpc_connection.getaccountaddress("default")
 balance = float(rpc_connection.getbalance())
 print('Balance: ' + str(balance))
+print("Consolidating funds to default account "+default_account+"...")
+txid = rpc_connection.sendtoaddress(default_account, balance, "", "", True)
+print("TXID: "+txid)
+#stakerlib.wait_confirm(rpc_connection, txid)
 
 AMOUNT = input("Please specify the size of UTXOs: ")
 if int(AMOUNT) < 1:
