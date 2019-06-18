@@ -15,4 +15,7 @@ with open('list.json') as key_list:
     json_data = json.load(key_list)
     for i in json_data:
         print(i[3])
-        rpc_connection.importprivkey(i[2])
+        try:
+            rpc_connection.importprivkey(i[2])
+        except:
+            pass
