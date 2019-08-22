@@ -8,20 +8,22 @@ import pprint
 import stakerlib
 
 def load_conf():
+    chain_list = []
     try:
         with open('staker.conf') as file:
             staker_conf = json.load(file)
+        for i in staker_conf:
+            chain_list.append(i)
     except Exception as e:
-        print(e)
-        staker_conf = []
         user_input = input('No staker.conf conf file, specify a chain to begin:')
-        staker_conf.append([user_input])
         with open('staker.conf', "a+") as f:
-            json.dump(staker_conf, f)
-        
-    return(staker_conf)
+            json.dump({user_input:{}}, f)
+        return([[user_input]])
 
-def initial_menu(staker_conf, msg):
+    return([chain_list])
+
+
+def initial_menu(chain_list, msg):
     os.system('clear')
     if str(msg[:5]) == 'Error':
         print(stakerlib.colorize(msg, 'red'))
@@ -30,19 +32,19 @@ def initial_menu(staker_conf, msg):
     print(stakerlib.colorize('pos64staker by KMDLabs', 'magenta'))
     print(stakerlib.colorize('===============', 'blue'))
     menu_item = 0
-    for i in staker_conf:
+    for i in chain_list:
         print(str(menu_item) + ' | ' + str(i[0]))
         menu_item += 1
-    print('\n' + str(len(staker_conf)) + ' | Start a chain from assetchains.json')
-    print(str(len(staker_conf) + 1) + ' | Bootstrap a chain from dexstats.info') 
-    print(str(len(staker_conf) + 2) + ' | <Add/remove chain>')
+    print('\n' + str(len(chain_list)) + ' | Start a chain from assetchains.json')
+    print(str(len(chain_list) + 1) + ' | Bootstrap a chain from dexstats.info')
+    print(str(len(chain_list) + 2) + ' | <Add/remove chain>')
     print('q | Exit TUI')
     print(stakerlib.colorize('===============\n', 'blue'))
 
 def print_menu(menu_list, chain, msg):
     if isinstance(msg, dict) or isinstance(msg, list):
         pprint.pprint(msg)
-    else: 
+    else:
         if str(msg[:5]) == 'Error':
             print(stakerlib.colorize(msg, 'red'))
         else:
@@ -119,7 +121,7 @@ def select_loop(error):
 # and an elif for it's position in the list
 def chain_loop(chain, msg):
     os.system('clear')
-    try:    
+    try:
         rpc_connection = stakerlib.def_credentials(chain)
         dummy = rpc_connection.getbalance() # test connection
     except Exception as e:
@@ -160,12 +162,14 @@ def chain_loop(chain, msg):
             stats_loop(chain, '')
         elif int(selection) == 9:
             dil_loop(chain, 'Dilithium')
+        elif int(selection) == 10:
+            msig_loop(chain, 'Multisig')
         else:
             print('BUG!')
 
 def stats_loop(chain, msg):
     os.system('clear')
-    try:    
+    try:
         rpc_connection = stakerlib.def_credentials(chain)
         dummy = rpc_connection.getbalance() # test connection
     except Exception as e:
@@ -212,7 +216,7 @@ def stats_loop(chain, msg):
 
 def dil_loop(chain, msg):
     os.system('clear')
-    try:    
+    try:
         rpc_connection = stakerlib.def_credentials(chain)
         dummy = rpc_connection.getbalance() # test connection
     except Exception as e:
@@ -256,7 +260,7 @@ def dil_loop(chain, msg):
 
 def dil_stats_loop(chain, msg):
     os.system('clear')
-    try:    
+    try:
         rpc_connection = stakerlib.def_credentials(chain)
         dummy = rpc_connection.getbalance() # test connection
     except Exception as e:
@@ -281,6 +285,53 @@ def dil_stats_loop(chain, msg):
             msg = stakerlib.dil_external_balance(rpc_connection)
             dil_stats_loop(chain, msg)
 
+def msig_loop(chain, msg):
+    os.system('clear')
+    try:
+        rpc_connection = stakerlib.def_credentials(chain)
+        dummy = rpc_connection.getbalance() # test connection
+    except Exception as e:
+        os.system('clear')
+        print(e)
+        error = 'Error: Could not connect to daemon. ' + chain + ' is not running or rpc creds not found.'
+        select_loop(error)
+
+    while True:
+        os.system('clear')
+        print_menu(msig_menu, chain, msg)
+        selection = stakerlib.user_inputInt(0,len(msig_menu),"make a selection:")
+        if int(selection) == 0:
+            os.system('clear')
+            chain_loop(chain, '')
+        #FIXME attempt to grab inputs from explorer?
+        elif int(selection) == 1:
+            msig_loop(chain, 'Please note that all functionality of this app requires the multisig address to' +
+                  ' be imported to the wallet via the \'addmultisigaddress\' rpc command.' +
+                  ' At least one private key for this multisig must be imported as well.\n\n' +
+                  '1. If you\'re using this for the first time, you must first create an oracle for your ' +
+                  'group of signers. Select \'Create new oracle\' and follow the prompts.\n' +
+                  '    1a. Each signer must then register to this oracle prior to attempting to sign ' +
+                  ' a transaction with \'Register to oracle\'. \n\n' +
+                  '2. If you\'re creating a new transaction, select \'Build initial transaction\'.\n' +
+                  '    2a. This will prompt you to input the vins for this transaction.\n' +
+                  '    2b. Input the total number of outputs\n' +
+                  '    2c. Input an address or scriptsig and amount for each output\n' +
+                  'This will show you the decoded transaction and ask you to confirm it is correct.' +
+                  ' If you confirm it is correct, it will sign the transaction, and post the result to an oracle')
+        elif int(selection) == 2:
+            msg = stakerlib.msig_oraclescreate(chain, rpc_connection)
+            msig_loop(chain, msg)
+        elif int(selection) == 3:
+            msg = stakerlib.msig_addoracle(chain, rpc_connection)
+            msig_loop(chain, msg)
+        elif int(selection) == 4:
+            msg = stakerlib.msig_removeoracle(chain, rpc_connection)
+            msig_loop(chain, msg)
+        elif int(selection) == 5:
+            msg = stakerlib.msig_register(chain, rpc_connection)
+            msig_loop(chain, msg)
+
+
 chain_menu = ['Generate an address for each segid',
               'Distribute balance evenly across segids',
               'Import an already existing address json',
@@ -288,8 +339,9 @@ chain_menu = ['Generate an address for each segid',
               'Start a new chain',
               'Restart daemon with -blocknotify',
               'Unlock all locked utxos',
-              'Stats menu', 
-              'Dilithium menu']
+              'Stats menu',
+              'Dilithium menu',
+              'Multisig menu']
 stats_menu = ['balance',
               'UTXO count',
               'UTXO average size',
@@ -300,15 +352,20 @@ stats_menu = ['balance',
               'top staked from addresses',
               'estimate staker\'s total balance']
 dil_menu = ['List handles',
-            'Register a new handle', 
-            'send t -> q', 'Qsend', 
-            'Qsendmany', 
-            'balances', 
-            'q_listunspent', 
+            'Register a new handle',
+            'send t -> q', 'Qsend',
+            'Qsendmany',
+            'balances',
+            'q_listunspent',
             'Dilithium Stats Menu']
 dil_stats_menu = ['List handles for an arbitrary pubkey',
                   'Get q_listunspent for an arbitary handle',
                   'Get q balance for an arbitary handle']
+msig_menu = ['Instructions',
+             'Create new oracle',
+             'Add oracle',
+             'Remove oracle',
+             'Oracle Register',
+             'Build initial transaction']
 os.system('clear')
 select_loop('')
-

@@ -75,6 +75,13 @@ def def_credentials(chain):
     return (Proxy("http://%s:%s@127.0.0.1:%d" % (rpcuser, rpcpassword, int(rpcport))))
 
 
+def print_select_menu(menu_list, chain, msg):
+    menu_item = 0
+    for i in menu_list:
+        print(str(menu_item) + ' | ' + str(i))
+        menu_item += 1
+
+
 def user_inputInt(low,high, msg):
     while True:
         user_input = input(msg)
@@ -125,7 +132,7 @@ def user_input(display, input_type):
             return('exit')
     else:
         return(u_input)
-    
+
 
 # generate address, validate address, dump private key
 def genvaldump(rpc_connection):
@@ -156,7 +163,7 @@ def colorize(string, color):
         return colors[color] + string + '\033[0m'
 
 
-# function to convert any address to different prefix 
+# function to convert any address to different prefix
 # also useful for validating an address, use '3c' for prefix for validation
 def addr_convert(prefix, address):
     rmd160_dict = {}
@@ -233,7 +240,7 @@ def sendmany64_TUI(chain, rpc_connection):
     AMOUNT = user_input('Please specify the size of UTXOs: ', float)
     if AMOUNT == 'exit':
         return('0')
-    
+
     if float(AMOUNT) < float(1):
         return('Error: Cant stake coin amounts less than 1 coin, try again.')
     UTXOS = user_input("Please specify the amount of UTXOs to send to each segid: ", int)
@@ -244,7 +251,7 @@ def sendmany64_TUI(chain, rpc_connection):
     print('Total amount: ' + str(total))
     if total > balance:
         segidTotal = balance / 64
-        return('Error: Total sending is ' + str(total-balance) + ' more than your balance. Try again.' + 
+        return('Error: Total sending is ' + str(total-balance) + ' more than your balance. Try again.' +
               '\nTotal avalible per segid is: ' + str(segidTotal))
 
     sendmanyloop_result = sendmanyloop(rpc_connection, AMOUNT, UTXOS)
@@ -355,7 +362,7 @@ def genaddresses(chain, rpc_connection):
         return('Error: Already have ' + chain + '.json, move it if you would like to '
               'generate another set.You can use importlist.py script to import'
               ' the already existing list.py to a given chain.')
-    
+
     # fill a list of sigids with matching segid address data
     segids = {}
     while len(segids.keys()) < 64:
@@ -378,7 +385,7 @@ def genaddresses(chain, rpc_connection):
           'THIS FILE CONTAINS PRIVATE KEYS. KEEP IT SAFE.')
 
 
-# import list.json to chain 
+# import list.json to chain
 def import_list(chain, rpc_connection):
     user_input = input('Please specify a json file to import: ')
     if not os.path.isfile(user_input):
@@ -398,11 +405,11 @@ def import_list(chain, rpc_connection):
     # save output to <CHAIN>.json
     f = open(chain + ".json", "w+")
     f.write(json.dumps(json_data))
-    return('Success! Your node is now rescanning. ' + 
-           'This may take a long amount of time. ' + 
-           'You can monitor the progress from the debug.log\n' + 
+    return('Success! Your node is now rescanning. ' +
+           'This may take a long amount of time. ' +
+           'You can monitor the progress from the debug.log\n' +
            chain + '.json created! THIS FILE CONTAINS PRIVATE KEYS. KEEP IT SAFE!')
-    
+
 def extract_segid(_segid,unspents):
     ret = []
     for unspent in unspents:
@@ -442,20 +449,20 @@ def withdraw_TUI(chain, rpc_connection):
     if address_check != address:
         print('Wrong address format, must use an R address')
         withdraw_TUI(chain, rpc_connection)
-    
+
     user_input = input("Please specify the percentage of balance to lock: ")
     try:
         PERC = int(user_input)
     except:
         print('Error: must be whole number')
         withdraw_TUI(chain, rpc_connection)
-    
+
     if PERC < 1:
         print('Error: Cant lock 0%.')
         withdraw_TUI(chain, rpc_connection)
 
     # get listunspent
-    try:        
+    try:
         listunspent_result = rpc_connection.listunspent()
     except Exception as e:
         return('Error: ' + str(e))
@@ -471,7 +478,7 @@ def withdraw_TUI(chain, rpc_connection):
     # Sort it by value and confirms. We want to keep large and old utxos. So largest and oldest at top.
     # When the wallet has small number of utxo per segid ( < 10 )the percentage should be static 50, other % give unexpected results.
     for segid in segids:
-        # likley some improvment here age vs. size ? 
+        # likley some improvment here age vs. size ?
         # there should maybe be a utxo score, that includes age and size and locks utxos with highest score.
         segid = sorted(segid, key=lambda x : (-x['amount'], -x['confirmations']))
         numutxo = int(len(segid) * (PERC/100))
@@ -490,7 +497,7 @@ def withdraw_TUI(chain, rpc_connection):
     lockunspent_result = rpc_connection.lockunspent(False, lockunspent_list)
 
     # get listunspent
-    try:        
+    try:
         listunspent_result = rpc_connection.listunspent()
     except Exception as e:
         return('Error: ' + str(e))
@@ -503,14 +510,14 @@ def withdraw_TUI(chain, rpc_connection):
         print('Balance available to send: ' + str(totalbalance))
     else:
         print('Balance available to send: ' + str(totalbalance))
-        
+
     print('Balance available to send: ' + str(totalbalance))
-        
+
     amount = float(input('Amount? '))
     if amount < 0 or amount > totalbalance:
         unlockunspent2()
         return('Error: Too poor!')
-        
+
     print('Sending ' + str(amount) + ' to ' + address)
     ret = input('Are you happy with these? ').lower()
     if ret.startswith('n'):
@@ -587,7 +594,7 @@ def restart_daemon(chain, params, rpc_connection):
             continue
         except Exception as e:
             break
-    
+
     komodod_path = sys.path[0] + '/komodod'
     blocknotify = '-blocknotify=' + sys.path[0] + '/staker.py %s ' + chain
     pubkey = '-pubkey=' + mypubkey
@@ -615,7 +622,7 @@ def restart_daemon(chain, params, rpc_connection):
         return('Error: Daemon started with different p2p port. Please verify that the parameters in assetchains.json are correct')
     return('Daemon restarted succesfully!')
 
-    
+
 
 def get_chainparams(chain):
     operating_system = platform.system()
@@ -629,7 +636,7 @@ def get_chainparams(chain):
                 asset_json = json.load(f)
                 for i in asset_json:
                     ac_names.append(i['ac_name'])
-                
+
                 if chain not in ac_names:
                     return(0)
                 else:
@@ -734,11 +741,11 @@ def fetch_bootstrap(chain):
         data_dir = def_data_dir()
         chain_dir = data_dir + '/' + chain
         if os.path.isdir(chain_dir + '/blocks') or os.path.isdir(chain_dir + '/chainstate'):
-            user_yn = input('You already have a data directory for ' + chain + 
+            user_yn = input('You already have a data directory for ' + chain +
                             '. This will delete the local chain if one exists. ' +
                             'Would you like to continue?(y/n)')
             if not user_yn.startswith('y'):
-                return('Error: Please sync the chain manually.') 
+                return('Error: Please sync the chain manually.')
         for bootstrap in bootstrap_json['mirrors']:
             if bootstrap['coin'] == chain:
                 print('Downloading ' + chain + ' bootstrap from ' + bootstrap['downloadurl'] + ' please wait')
@@ -750,7 +757,7 @@ def fetch_bootstrap(chain):
                 if os.path.isdir(chain_dir + '/blocks'):
                     shutil.rmtree(chain_dir + '/blocks')
                 if os.path.isdir(chain_dir + '/chainstate'):
-                    shutil.rmtree(chain_dir + '/chainstate') 
+                    shutil.rmtree(chain_dir + '/chainstate')
     else:
         return('Dexstats does not have a bootstrap for this coin. You must sync the chain manually.')
 
@@ -778,7 +785,7 @@ def fetch_bootstrap(chain):
     chain_path = ac_dir + '/' + chain
     print('Extracting ' + bootstrap + ' to ' + chain_path + ' , please wait')
     for i in extract:
-        tar.extract(i, path=chain_path) 
+        tar.extract(i, path=chain_path)
     user_yn = input('Bootstrap installed. Would you like to delete the tar.gz file?(y/n): ')
     if user_yn.startswith('y'):
         os.remove(bootstrap)
@@ -859,7 +866,7 @@ def dil_register(chain, rpc_connection):
 
     with open('dil.conf', "w") as f:
         json.dump(dil_conf, f)
-    return('Success!\npkaddr: ' + register_result['pkaddr'] + 
+    return('Success!\npkaddr: ' + register_result['pkaddr'] +
            '\nskaddr: ' + register_result['skaddr'] + '\ntxid: ' + register_result['txid'])
 
 
@@ -881,7 +888,7 @@ def handle_select(msg, rpc_connection, show_balance):
         handle_list.append(i)
         count += 1
     handle_entry = user_inputInt(0,len(dil_conf)-1, msg)
-    return(handle_list[handle_entry]) 
+    return(handle_list[handle_entry])
 
 
 # list dilithium handles
@@ -945,7 +952,7 @@ def dil_listunspent(rpc_connection, mine):
         CC_address = rpc_connection.cclibaddress('19', pubkey)['PubkeyCCaddress(CClib)']
         dil_conf = {}
         dil_conf[mine] = {'txid': destpubtxid}
-        
+
 
     address_dict['addresses'] = [CC_address]
     CC_txids = rpc_connection.getaddressutxos(address_dict)
@@ -956,11 +963,11 @@ def dil_listunspent(rpc_connection, mine):
         result_dict[i] = []
 
     # iterate over CC address UTXOs
-    for CC_utxo in CC_txids:        
+    for CC_utxo in CC_txids:
         tx = rpc_connection.getrawtransaction(CC_utxo['txid'], 1)
         height = tx['height']
-        
-        # check if UTXO has an OP_RETURN, decode OP_RETURN with decodeccopret rpc command 
+
+        # check if UTXO has an OP_RETURN, decode OP_RETURN with decodeccopret rpc command
         if tx['vout'][-1]['scriptPubKey']['type'] == 'nulldata':
             OP_hex = tx['vout'][-1]['scriptPubKey']['hex']
             decode = rpc_connection.decodeccopret(OP_hex)
@@ -993,7 +1000,7 @@ def dil_listunspent(rpc_connection, mine):
                 for handle in dil_conf:
                     # the 'destpubtxid' of sender will always be bigend_OP[-76:-12] for Qsend txs
                     from_handle = handle_get(bigend_OP[-76:-12], rpc_connection)
-                    # the beginning of bigend_OP will begin with 'destpubtxid' of each 
+                    # the beginning of bigend_OP will begin with 'destpubtxid' of each
                     # output or 32 null bytes if output is to a normal R address
                     vout_length = len(tx['vout']) - 1
                     # slice bigend_OP, regex 'destpubtxid' of each output
@@ -1020,8 +1027,8 @@ def dil_listunspent(rpc_connection, mine):
 
 # {'evalcode': 19, 'funcid': 'x', 'name': 'dilithium', 'method': 'send', 'help': 'handle pubtxid amount', 'params_required': 3, 'params_max': 3}
 def dil_send(chain, rpc_connection):
-    user_yn = input('Would you like to deposit coins to an external handle? ' + 
-                    ' If you select no, the local handles saved in dil.conf ' + 
+    user_yn = input('Would you like to deposit coins to an external handle? ' +
+                    ' If you select no, the local handles saved in dil.conf ' +
                     'will be used(y/n):')
     if user_yn.startswith('y'):
         handle = input('Please input a handle to send to: ')
@@ -1032,7 +1039,7 @@ def dil_send(chain, rpc_connection):
             with open('dil.conf') as f:
                 dil_conf = json.load(f)
         except Exception as e:
-            return('Error: failed with: ' + str(e) + 
+            return('Error: failed with: ' + str(e) +
                    ' Please use the register command if you haven\'t already')
 
         # FIXME add a warning here if normal_pubkey is not own by current wallet
@@ -1049,7 +1056,7 @@ def dil_send(chain, rpc_connection):
     params.append(pubtxid)
     params.append(send_amount)
     result = dil_wrap('send', params, rpc_connection)
-    # FIXME log all sends to dil.log 
+    # FIXME log all sends to dil.log
     if 'error' in result:
         return('Error: dilthium send broadcast failed with ' + str(result['error']))
     rawhex = result['hex']
@@ -1067,7 +1074,7 @@ def dil_Qsendmany(chain, rpc_connection):
     except Exception as e:
         return('Error: failed with: ' + str(e) + ' Please use the register command if you haven\'t already')
 
-    handle_entry = handle_select("Select handle to send coins from: ", rpc_connection, 1) 
+    handle_entry = handle_select("Select handle to send coins from: ", rpc_connection, 1)
     output_length = user_inputInt(0,63, 'Please specify amount of outputs[0-63]: ')
     outputs = []
     for i in range(output_length):
@@ -1084,7 +1091,7 @@ def dil_Qsendmany(chain, rpc_connection):
                 destination = dil_wrap('handleinfo', user_output, rpc_connection)['destpubtxid']
             except Exception as e:
                 return('Error: Handle not found or invalid R address ' + user_output)
-                
+
         dum_dict['dest'] = destination
         dum_dict['amount'] = user_amount
         outputs.append(dum_dict)
@@ -1119,7 +1126,7 @@ def dil_Qsend(chain, rpc_connection):
     params = []
 
     # FIXME add a warning here if normal_pubkey is not own by current wallet
-    handle_entry = handle_select("Select handle to send coins from: ", rpc_connection, 1) 
+    handle_entry = handle_select("Select handle to send coins from: ", rpc_connection, 1)
     user_output = input('Please input a handle or R address to send coins to: ')
     try:
         user_output_check = addr_convert('3c', user_output)
@@ -1199,7 +1206,7 @@ def dil_external_balance(rpc_connection):
 
 # output string's positions in a list given the list and string
 def list_pos(input_list, input_string):
-    count = 0 
+    count = 0
     positions = []
     for i in input_list:
         if input_list[count] == input_string:
@@ -1457,3 +1464,202 @@ def estimate_stake_balance(rpc):
     print('Average UTXO size: ' + str(total/len(utxos)))
     input('\n[press enter to return to menu]')
     return('')
+
+
+# check that at least one vin is spent from at least one signer address
+# input True, txid. False, decoded
+def msig_creatorcheck(rpc, txid, baddr, txidbool):
+    if txidbool:
+        decode = rpc.getrawtransaction(txid, 1)
+    else:
+        decode = txid
+    validate = rpc.validateaddress(baddr)
+    spent_from_key = False
+    inputs = []
+    for vin in decode['vin']:
+        vout = vin['vout']
+        txid = vin['txid']
+        getraw = rpc.getrawtransaction(txid, 1)
+        if getraw['vout'][vout]['scriptPubKey']['addresses'][0] in validate['addresses']:
+            spent_from_key = True
+    return(spent_from_key)
+
+
+def msig_oraclescreate(chain, rpc):
+    try:
+        rpc.setpubkey()['pubkey']
+    except:
+        return('Error: daemon must be started with \'-pubkey=\'. This can be any valid pubkey.')
+
+    name = str(input('Please specify a name for oracle:'))
+
+    # FIXME functionize this maybe?
+    baddr = input('Please specify multisig address, it must already be imported via \'addmultisigaddress\': ')
+    my_address = msig_check_baddr(rpc, baddr)
+    if str(my_address).startswith('Error'):
+        return(my_address)
+
+    oraclescreate = rpc.oraclescreate(name, str(baddr), 'D')
+
+    try:
+        rawhex = oraclescreate['hex']
+    except Exception as e:
+        return('Error: oraclescreate failed ' + str(e) + str(rawhex))
+    try:
+        decode = rpc.decoderawtransaction(rawhex)
+    except Exception as e:
+        return('Error: oraclescreate decode failed ' + str(e))
+
+    spent_from_key = msig_creatorcheck(rpc, decode, baddr, False)
+
+    if not spent_from_key:
+        return('Error: oraclescreate must spend a vin from a signing address. ' +
+               'Consolidate full balance of wallet to ' + str(my_address) +
+               ' and try again.')
+
+    try:
+        txid = rpc.sendrawtransaction(oraclescreate['hex'])
+    except Exception as e:
+        return('Error: oraclescreate broadcast failed with: ' + str(e) + '\n' + str(oraclescreate))
+
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if 'msig_txids' in staker_conf[chain]:
+        staker_conf[chain]['msig_txids'].append(txid)
+    else:
+        staker_conf[chain]['msig_txids'] = [txid]
+    with open('staker.conf', 'w+') as f:
+        json.dump(staker_conf, f)
+
+    return('Success! You must now use \'Oracle Register\'' +
+           ' for this oracle\n' + name + ' ' + txid)
+
+
+def msig_check_baddr(rpc, baddr):
+    # FIXME functionize this maybe?
+    try:
+        address_check = addr_convert('55', baddr)
+    except Exception as e:
+        return('Error: invalid address:' + str(e))
+    if address_check != baddr:
+        return('Error: Wrong address format, must use a script(b) address')
+
+    bvalidate = rpc.validateaddress(baddr)
+    if 'hex' not in bvalidate:
+        return('Error: Address not imported, please use \'addmultisigaddress\' rpc command.')
+
+    own_flag = False
+    my_address = ''
+    for address in bvalidate['addresses']:
+        validate = rpc.validateaddress(address)
+        if validate['ismine'] == True:
+            my_address = address
+            own_flag = True
+    if own_flag == False:
+        return('Error: node must have at least one key of the multisig imported. ' +
+               'Import it with \'importprivkey\' rpc command.')
+    return(my_address)
+
+
+def msig_addoracle(chain, rpc):
+    txid = input('Please specify oracle txid to add: ')
+
+    oracleslist = rpc.oracleslist()
+    if not txid in oracleslist:
+        return('Error: txid provided is not a oraclescreate txid')
+
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if 'msig_txids' in staker_conf[chain]:
+        staker_conf[chain]['msig_txids'].append(txid)
+    else:
+        staker_conf[chain]['msig_txids'] = [txid]
+    with open('staker.conf', 'w+') as f:
+        json.dump(staker_conf, f)
+
+    return('Success! ' + str(txid) + ' added to conf. You must now use \'Oracles Register\'')
+
+
+def msig_removeoracle(chain, rpc):
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if not 'msig_txids' in staker_conf[chain]:
+        return('Error: No oracle txids found in conf')
+    if not staker_conf[chain]['msig_txids']:
+        return('Error: No oracle txids found in conf')
+    else:
+        orcl_list = staker_conf[chain]['msig_txids']
+        print_select_menu(orcl_list, chain, '')
+        selection = user_inputInt(0,len(orcl_list),"make a selection:")
+        removed = orcl_list[selection]
+        del staker_conf[chain]['msig_txids'][selection]
+        with open('staker.conf', 'w+') as f:
+            json.dump(staker_conf, f)
+    return(str(removed) + ' removed from conf.')
+
+
+def msig_register(chain, rpc):
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if 'msig_txids' not in staker_conf[chain]:
+        return('Error: No oracle txids found in conf, use \'Add oracle\' or \'Create new oracle\' first.')
+
+    orcl_list = staker_conf[chain]['msig_txids']
+    print_select_menu(orcl_list, chain, '')
+    selection = user_inputInt(0,len(orcl_list),"make a selection:")
+    txid = orcl_list[selection]
+
+    try:
+        oraclesinfo = rpc.oraclesinfo(txid)
+    except Exception as e:
+        return('Error: oraclesinfo rpc command failed with ' + str(e))
+
+    #FIXME add check if already registered
+    baddr = oraclesinfo['description']
+    baddr_check = msig_check_baddr(rpc, baddr)
+    if str(baddr_check).startswith('Error'):
+        return(baddr_check)
+    if not baddr_check:
+        return('Error: msig_check_baddr func failed. Please report to Alright.')
+
+    spent_from_key = msig_creatorcheck(rpc, txid, baddr, True)
+
+    if not spent_from_key:
+        return('Error: This oracle was not created by a signer. Impersonation ' +
+               'or improper signature. BE CAREFUL!')
+
+    validate_mine = rpc.validateaddress(baddr_check)
+    mypk = validate_mine['pubkey']
+    print(mypk)
+
+    fund = rpc.oraclesfund(txid)
+    try:
+        rawhex = fund['hex']
+    except Exception as e:
+        return('Error: oraclesfund rpc command failed with ' + str(fund))
+    try:
+        fundtxid = rpc.sendrawtransaction(rawhex)
+    except Exception as e:
+        return('Error: oraclesfund broadcast failed with ' + str(e))
+
+    register = rpc.oraclesregister(txid, str(10000))
+    try:
+        rawhex = register['hex']
+    except Exception as e:
+        return('Error: oraclesfund rpc command failed with ' + str(register))
+    try:
+        registertxid = rpc.sendrawtransaction(rawhex)
+    except Exception as e:
+        return('Error: oraclesfund broadcast failed with ' + str(e))
+
+    subscribe = rpc.oraclessubscribe(txid, mypk, str(0.1))
+    try:
+        rawhex = subscribe['hex']
+    except Exception as e:
+        return('Error: oraclessubscribe rpc command failed with ' + str(subscribe))
+    try:
+        subscribetxid = rpc.sendrawtransaction(rawhex)
+    except Exception as e:
+        return('Error: oraclessubscibe broadcast failed with ' + str(e))
+
+    return('Success! Registered to oracle ' + str(txid))
