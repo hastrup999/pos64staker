@@ -320,16 +320,26 @@ def msig_loop(chain, msg):
                   ' If you confirm it is correct, it will sign the transaction, and post the result to an oracle')
         elif int(selection) == 2:
             msg = stakerlib.msig_oraclescreate(chain, rpc_connection)
-            msig_loop(chain, msg)
+            #msig_loop(chain, msg)
         elif int(selection) == 3:
             msg = stakerlib.msig_addoracle(chain, rpc_connection)
-            msig_loop(chain, msg)
+            #msig_loop(chain, msg)
         elif int(selection) == 4:
             msg = stakerlib.msig_removeoracle(chain, rpc_connection)
-            msig_loop(chain, msg)
+            #msig_loop(chain, msg)
         elif int(selection) == 5:
             msg = stakerlib.msig_register(chain, rpc_connection)
-            msig_loop(chain, msg)
+            #msig_loop(chain, msg)
+        elif int(selection) == 6:
+            msg = stakerlib.msig_signmessage(chain, rpc_connection)
+            #msig_loop(chain, msg)
+        elif int(selection) == 7:
+            msg = stakerlib.msig_buildtx(chain, rpc_connection)
+            #msig_loop(chain, msg)
+        elif int(selection) == 8:
+            msg = stakerlib.msig_addsig(chain, rpc_connection)
+        msig_loop(chain, msg)
+
 
 
 chain_menu = ['Generate an address for each segid',
@@ -366,6 +376,8 @@ msig_menu = ['Instructions',
              'Add oracle',
              'Remove oracle',
              'Oracle Register',
-             'Build initial transaction']
+             'Oracle sign message',
+             'Build initial transaction',
+             'Add signature ']
 os.system('clear')
 select_loop('')

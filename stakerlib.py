@@ -17,6 +17,8 @@ import tarfile
 import shutil
 import time
 import secrets
+import pprint
+import codecs
 import bitcoin
 from bitcoin.wallet import P2PKHBitcoinAddress
 from bitcoin.core import x
@@ -85,6 +87,8 @@ def print_select_menu(menu_list, chain, msg):
 def user_inputInt(low,high, msg):
     while True:
         user_input = input(msg)
+        if user_input == 'done':
+            return(user_input)
         if user_input == ('q' or 'quit'):
             print('Exiting...')
             sys.exit(0)
@@ -104,7 +108,7 @@ def selectRangeFloat(low,high, msg):
             user_input = input(msg)
             number = float(user_input)
         except ValueError:
-            print("integer only, try again")
+            print("float only, try again")
             continue
         if low <= number <= high:
             return number
@@ -1613,6 +1617,10 @@ def msig_register(chain, rpc):
         oraclesinfo = rpc.oraclesinfo(txid)
     except Exception as e:
         return('Error: oraclesinfo rpc command failed with ' + str(e))
+    try:
+        rawhex = oraclesinfo['txid']
+    except Exception as e:
+        return('Error: oraclesinfo rpc command failed with ' + str(oraclesinfo))
 
     #FIXME add check if already registered
     baddr = oraclesinfo['description']
@@ -1628,10 +1636,11 @@ def msig_register(chain, rpc):
         return('Error: This oracle was not created by a signer. Impersonation ' +
                'or improper signature. BE CAREFUL!')
 
-    validate_mine = rpc.validateaddress(baddr_check)
-    mypk = validate_mine['pubkey']
-    print(mypk)
-
+    try:
+        mypk = rpc.setpubkey()['pubkey']
+    except:
+        return('Error: must have -pubkey set, can be any valid pubkey. ' +
+               'Take note of it as you will need it again in the future to reuse this oracle')
     fund = rpc.oraclesfund(txid)
     try:
         rawhex = fund['hex']
@@ -1663,3 +1672,204 @@ def msig_register(chain, rpc):
         return('Error: oraclessubscibe broadcast failed with ' + str(e))
 
     return('Success! Registered to oracle ' + str(txid))
+
+
+def msig_oraclelen(rawhex):
+    #get length in bytes of hex in decimal
+    bytelen = int(len(rawhex) / int(2))
+    hexlen = format(bytelen, 'x')
+
+    #get length in big endian hex
+    if bytelen < 16:
+        bigend = "000" + str(hexlen)
+    elif bytelen < 256:
+        bigend = "00" + str(hexlen)
+    elif bytelen < 4096:
+        bigend = "0" + str(hexlen)
+    elif bytelen < 65536:
+        bigend = str(hexlen)
+    else:
+        sys.exit('transaction too large for oracle, rawhex:' + str(rawhex))
+    return(endian_flip(bigend))
+
+
+def msig_buildtx(chain, rpc):
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if 'msig_txids' not in staker_conf[chain]:
+        return('Error: No oracle txids found in conf, use \'Add oracle\' or \'Create new oracle\' first.')
+
+    orcl_list = staker_conf[chain]['msig_txids']
+    print_select_menu(orcl_list, chain, '')
+    selection = user_inputInt(0,len(orcl_list),"make a selection:")
+    oracle_txid = orcl_list[selection]
+
+    oracleinfo = rpc.oraclesinfo(oracle_txid)
+    try:
+        baddr = oracleinfo['description']
+    except:
+        return('Error: oraclesinfo failed, possible incorrect txid ' + str(oracleinfo))
+
+    aux_chain = input('Please specify ticker for chain to spend on. Must have a dexstats explorer for now: ')
+    with urllib.request.urlopen('https://' + aux_chain +
+    '.explorer.dexstats.info/insight-api-komodo/addr/' + baddr + '/utxo') as jjson:
+        utxos = json.loads(jjson.read().decode())
+
+    vins = []
+    select_finished = False
+    print('\n')
+    while not select_finished:
+        if len(utxos) == 0:
+            select_finished = True
+            continue
+        total = 0
+        total_vins = 0
+        print_select_menu(utxos, chain, '')
+        selection = user_inputInt(0,len(utxos),"make a selection, type \'done\' when finished: ")
+        if selection == 'done':
+            select_finished = True
+            continue
+        vins.append(utxos[selection])
+        del utxos[selection]
+        for vin in vins:
+            total_vins += 1
+            total += vin['satoshis']
+        print('Total vins: ' + str(total_vins) + '\nTotal amount: ' + str(total/100000000))
+
+    # FIXME shouldn't have to do this again, lazy
+    total = 0
+    total_vins = 0
+    for vin in vins:
+        total += vin['satoshis']
+        total_vins += 1
+
+    try:
+        output_count = int(input('Please specify the amount of outputs: '))
+        assert (output_count > 0)
+    except:
+        return('Error: must input a positive integer for amount of outputs')
+
+    vouts = {}
+    for i in range(output_count):
+        # FIXME check valid amount, track total
+        out_amount = selectRangeFloat(0.00001,total/100000000, 'Please specify amount for output ' + str(i) + ': ')
+        # FIXME check valid address, prevent duplicate
+        # FIXME show TXFEE diff, if KMD, rewards
+        address = input('Please specify address for output ' + str(i) + ': ')
+        vouts[address] = out_amount
+
+    rawtx = rpc.createrawtransaction(vins, vouts, 0, 7777777)
+    decode = rpc.decoderawtransaction(rawtx)
+    print('\n')
+    pprint.pprint(decode)
+    yn = input('\nPlease confirm this transaction is correct. Type \'I confirm this is correct\' to confirm: ')
+    if not yn.lower().startswith('i confirm this is correct'):
+        return('Error: transaction not confirmed, operation cancelled try again')
+
+    signresult = rpc.signrawtransaction(rawtx, vins)
+    try:
+        hex = signresult['hex']
+    except:
+        return('Error: signrawtransaction failed with ' + str(signresult))
+    if hex == rawtx:
+        return('Error: signrawtransaction failed. Check that key is imported.')
+
+    bytes_len = msig_oraclelen(hex)
+
+    oraclesdata = rpc.oraclesdata(oracle_txid, bytes_len+hex)
+    try:
+        rawhex = oraclesdata['hex']
+    except Exception as e:
+        return('Error: oraclesdata rpc command failed with ' + str(oraclesdata))
+    try:
+        datatxid = rpc.sendrawtransaction(rawhex)
+    except Exception as e:
+        return('Error: oraclesdata broadcast failed with ' + str(e))
+
+    return('Transaction succesfully signed and uploaded to oracle. Notify the other signers.')
+
+# FIXME this step can be removed once oraclesdata can spend from mempool
+def msig_signmessage(chain, rpc):
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if 'msig_txids' not in staker_conf[chain]:
+        return('Error: No oracle txids found in conf, use \'Add oracle\' or \'Create new oracle\' first.')
+    orcl_list = staker_conf[chain]['msig_txids']
+    print_select_menu(orcl_list, chain, '')
+    selection = user_inputInt(0,len(orcl_list),"make a selection:")
+    oracle_txid = orcl_list[selection]
+
+    try:
+        mypk = rpc.setpubkey()['pubkey']
+    except:
+        return('Error: must launch daemon with -pubkey= or use \'setpubkey\' rpc command')
+    oraclesinfo = rpc.oraclesinfo(oracle_txid)
+    if not oraclesinfo['registered']:
+        return('Error: no publishers found. Use \'Oracle Register\' and wait for at least 1 confirmation.')
+    for publisher in oraclesinfo['registered']:
+        if publisher['publisher'] == mypk:
+            my_baton = publisher['baton']
+    baddr = oraclesinfo['description']
+    my_address = msig_check_baddr(rpc, baddr)
+    if my_address.startswith('Error:'):
+        return(my_address)
+    oraclessamples = rpc.oraclessamples(oracle_txid, my_baton, str(0))
+    if oraclessamples['samples']:
+        return('Error: Already have written data to this oracle. This must be the very first ' +
+               'thing you do after register or others signers will not be able to validate your key ' +
+               'change -pubkey and re-register.')
+    try:
+        sig = rpc.signmessage(my_address, baddr)
+    except Exception as e:
+        return('Error: signmessage rpc command failed with ' + str(e))
+    verify = rpc.verifymessage(my_address, sig, baddr)
+    if not verify:
+        return('Error: bad signature. Please report to Alright.')
+    sig = sig + baddr
+
+    sighex = codecs.encode(sig).hex()
+    bytes_len = msig_oraclelen(sighex)
+
+    oraclesdata = rpc.oraclesdata(oracle_txid, bytes_len+sighex)
+    try:
+        rawhex = oraclesdata['hex']
+    except Exception as e:
+        return('Error: oraclesdata rpc command failed with ' + str(oraclesdata))
+    try:
+        datatxid = rpc.sendrawtransaction(rawhex)
+    except Exception as e:
+        return('Error: oraclesdata broadcast failed with ' + str(e))
+
+    return('Success! Message signed and saved to oracle. Can now proceed to \'Create new oracle\' or \'Add signature\'')
+
+
+def msig_addsig(chain, rpc):
+    with open('staker.conf') as file:
+        staker_conf = json.load(file)
+    if 'msig_txids' not in staker_conf[chain]:
+        return('Error: No oracle txids found in conf, use \'Add oracle\' or \'Create new oracle\' first.')
+    orcl_list = staker_conf[chain]['msig_txids']
+    print_select_menu(orcl_list, chain, '')
+    selection = user_inputInt(0,len(orcl_list),"make a selection:")
+    oracle_txid = orcl_list[selection]
+
+    oraclesinfo = rpc.oraclesinfo(oracle_txid)
+    baddr = oraclesinfo['description']
+    my_address = msig_check_baddr(rpc, baddr)
+    if my_address.startswith('Error:'):
+        return(my_address)
+
+    validateb = rpc.validateaddress(baddr)
+    addrs = validateb['addresses']
+
+    registers = []
+    for publisher in oraclesinfo['registered']:
+        addr = str(P2PKHBitcoinAddress.from_pubkey(x(publisher['publisher'])))
+        print('addr', addr)
+        print('addrs', addrs)
+        if addr in addrs:
+            registers.append(publisher)
+
+    print('\n')
+    print(registers)
+    input('heeeeh')
