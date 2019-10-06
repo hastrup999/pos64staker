@@ -173,7 +173,7 @@ def sendmany64_TUI(rpc_connection):
         print('Cant stake coin amounts less than 1 coin, try again.')
         return(0)
     UTXOS = user_input("Please specify the amount of UTXOs to send to each segid: ", int)
-    if UTXO == 'exit':
+    if UTXOS == 'exit':
         return(0)
 
     total = float(AMOUNT) * int(UTXOS) * 64
