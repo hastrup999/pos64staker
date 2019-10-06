@@ -55,7 +55,7 @@ def user_input(display, input_type):
     if u_input == 'q':
         print('Exiting to previous menu...\n')
         return('exit')
-    if not isinstance(display, input_type):
+    if not isinstance(u_input, input_type):
         print('input must be a ' + str(input_type) + '\n')
         return('exit')
     else:
