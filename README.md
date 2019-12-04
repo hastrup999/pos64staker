@@ -1,3 +1,4 @@
+# README.md
 # pos64 Staking Contest & Bug Hunt - 5 Dec 2019
 
 KMDLabs is holding a testing and bug-hunting competition this Friday, December 6, at 12:00 UTC. The competition will test and debug a new Proof of Stake (PoS) algorithm that will be activated in the Komodo ecosystem on December 20, 2019. 
