@@ -51,7 +51,9 @@ def def_data_dir():
 def def_credentials(chain):
     rpcport = '';
     ac_dir = def_data_dir()
-    if chain == 'KMD':
+    if chain == 'DUMMY':
+        return(Proxy("http://%s:%s@127.0.0.1:%d" % ('DUMMYUSER', 'DUMMYPASS', 9181)))
+    elif chain == 'KMD':
         coin_config_file = str(ac_dir + '/komodo.conf')
     else:
         coin_config_file = str(ac_dir + '/' + chain + '/' + chain + '.conf')
@@ -396,7 +398,10 @@ def import_list(chain, rpc_connection):
 
     print(rpc_connection.importprivkey(json_data[-1][2]))
     # save output to <CHAIN>.json
-    f = open(chain + ".json", "w+")
+    if chain == 'DUMMY':
+        f = open("PRIVATE.json", "w+")
+    else:
+        f = open(chain + ".json", "w+")
     f.write(json.dumps(json_data))
     return('Success! Your node is now rescanning. ' + 
            'This may take a long amount of time. ' + 
