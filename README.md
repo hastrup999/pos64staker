@@ -45,8 +45,11 @@ Clone your fork
 Copy komodod to ~/pos64staker/komodod
 
 ```entercomp.py```
+
 ```git add participants.json```
+
 ```git commit -m 'anything'```
+
 ```git push origin pos64test```
 
 PR those changes back to the repo
