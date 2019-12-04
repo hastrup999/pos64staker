@@ -14,7 +14,8 @@ except FileExistsError:
     pass
     
 resp = stakerlib.start_daemon('DUMMY', True)
-if str(resp).startswtih('ERROR'):
+print(resp)
+if str(resp).startswith('ERROR'):
     print(resp)
     sys.exit(0)
 rpc = Proxy("http://%s:%s@127.0.0.1:%d" % ('DUMMYUSER', 'DUMMYPASS', 9181))
