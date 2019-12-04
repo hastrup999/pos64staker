@@ -44,18 +44,11 @@ Clone your fork
 
 Copy komodod to ~/pos64staker/komodod
 
-```
-entercomp.py
-```
-```
-git add participants.json
-```
-```
-git commit -m 'anything'
-```
-```
-git push origin pos64test
-```
+```entercomp.py```
+```git add participants.json```
+```git commit -m 'anything'```
+```git push origin pos64test```
+
 PR those changes back to the repo
 
 Keep **PRIVATE.json**, it has all the keys you need for the competition. **THIS FILE CONTAINS PRIVATE KEYS. KEEP IT SAFE.**
