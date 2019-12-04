@@ -25,15 +25,15 @@ If you have any questions or need help getting started, please ask the [#kmd-lab
 
 ### Dependencies
 
-```sudo apt-get install python3 libgnutls28-dev libssl-dev```
+```sudo apt-get install python3 libgnutls28-dev libssl-dev
 
-```sudo apt-get install python3-pip```
+sudo apt-get install python3-pip
 
-```pip3 install setuptools```
+pip3 install setuptools
 
-```pip3 install wheel```
+pip3 install wheel
 
-```pip3 install base58 slick-bitcoinrpc python-bitcoinlib```
+pip3 install base58 slick-bitcoinrpc python-bitcoinlib```
 
 ### Sign up
 
@@ -45,13 +45,13 @@ Clone your fork
 
 Copy komodod to ~/pos64staker/komodod
 
-```entercomp.py```
+```entercomp.py
 
-```git add participants.json```
+git add participants.json
 
-```git commit -m 'anything'```
+git commit -m 'anything'
 
-```git push origin pos64test```
+git push origin pos64test```
 
 PR those changes back to the repo
 
