@@ -46,7 +46,7 @@ git checkout pos64test
 
 Copy komodod to ~/pos64staker/komodod
 
-run ```
+```
 entercomp.py
 ```
 ```
