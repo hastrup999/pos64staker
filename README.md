@@ -40,9 +40,7 @@ Fork pos64staker
 
 Clone your fork
 
-```
-git checkout pos64test
-```
+```git checkout pos64test```
 
 Copy komodod to ~/pos64staker/komodod
 
