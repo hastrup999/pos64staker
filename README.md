@@ -11,7 +11,7 @@ Currently, this will maintain a static number of UTXOs. This is important becaus
 ### Linux
 
 ```shell
-sudo apt-get install python3 libgnutls28-dev libssl-dev
+sudo apt-get install python3 libgnutls28-dev libssl-dev libcurl4-openssl-dev
 sudo apt-get install python3-pip
 pip3 install setuptools 
 pip3 install wheel
