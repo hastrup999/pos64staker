@@ -1,9 +1,9 @@
 # README.md
-# pos64 Staking Contest & Bug Hunt - 5 Dec 2019
+# pos64 Staking Contest & Bug Hunt
 
-KMDLabs is holding a testing and bug-hunting competition this Friday, December 6, at 12:00 UTC. The competition will test and debug a new Proof of Stake (PoS) algorithm that will be activated in the Komodo ecosystem on December 20, 2019. 
+KMDLabs is holding a testing and bug-hunting competition this Sunday, December 8, at 12:00 UTC. The competition will test and debug a new Proof of Stake (PoS) algorithm that will be activated in the Komodo ecosystem on December 20, 2019. 
 
-Shortly after 12:00 UTC on December 6, the LABS team will create a new test chain that uses the new PoS algorithm. The coins will be airdropped to all registered participants. Then the participants will start staking the test coins to test the new algorithm and accumulate as many block rewards as possible. The users with the highest test coin balances at the end of the testing period will receive awards. Additional bounties will be distributed to users who find bugs.
+Shortly after 12:00 UTC on December 8, the LABS team will create a new test chain that uses the new PoS algorithm. The coins will be airdropped to all registered participants. Then the participants will start staking the test coins to test the new algorithm and accumulate as many block rewards as possible. The users with the highest test coin balances at the end of the testing period will receive awards. Additional bounties will be distributed to users who find bugs.
 
 It’s recommended that participants use a Linux machine and are comfortable with GitHub.
 
