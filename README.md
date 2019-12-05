@@ -26,7 +26,7 @@ If you have any questions or need help getting started, please ask the [#kmd-lab
 ### Dependencies
 
 ```
-sudo apt-get install python3 libgnutls28-dev libssl-dev
+sudo apt-get install python3 libgnutls28-dev libssl-dev libcurl4-openssl-dev
 
 sudo apt-get install python3-pip
 
